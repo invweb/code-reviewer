@@ -1,15 +1,38 @@
 # Code Reviewer (Tauri + Candle LLM)
 
-> **This was an attempt to build a desktop application with a local AI code reviewer. The attempt was unsuccessful.**
+A desktop application that loads a local GGUF LLM via Candle and reviews code for bugs.
 
-## What it was supposed to do
+## What it does
 
-A Tauri desktop app that loads a local GGUF LLM (via Candle) and reviews code for bugs, returning a structured JSON with error locations and fixes.
+- Paste code into a text field
+- Click "Find errors"
+- The local LLM analyzes the code and returns structured JSON with error locations, types, descriptions, and fixes
 
-## Why it failed
+## Status
 
-- The project could never be compiled because `index.crates.io` (Fastly CDN) was unreachable from the development environment — ICMP ping succeeded but TCP port 443 was blocked by the network firewall.
-- Without being able to `cargo check` or `cargo build`, all Rust dependencies (candle-core, candle-transformers, tokenizers) could never be downloaded or verified.
+**Builds successfully.** Requires a GGUF model to function at runtime.
+
+## How to run
+
+```bash
+cd code-reviewer
+npm install
+CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse cargo tauri dev
+```
+
+## Download the model
+
+```bash
+mkdir -p ~/Library/Application\ Support/code-reviewer/
+
+# TinyLlama 1.1B Chat Q4_K_M (~700MB)
+curl -L "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0-GGUF/resolve/main/tinyllama-1.1b-chat-v1.0.Q4_K_M.gguf" \
+  -o ~/Library/Application\ Support/code-reviewer/model.gguf
+
+# Tokenizer
+curl -L "https://huggingface.co/TheBloke/TinyLlama-1.1B-Chat-v1.0/resolve/main/tokenizer.json" \
+  -o ~/Library/Application\ Support/code-reviewer/tokenizer.json
+```
 
 ## Project structure
 
@@ -27,3 +50,8 @@ src/
 - **Backend:** Rust, Tauri 2, Candle 0.8 (quantized LLM inference), tokenizers
 - **Frontend:** Vanilla HTML/CSS/JS
 - **Model:** TinyLlama 1.1B Chat Q4_K_M (GGUF format)
+
+## Notes
+
+- Requires `CARGO_REGISTRIES_CRATES_IO_PROTOCOL=sparse` due to `index.crates.io` being blocked on some networks
+- The sparse protocol config is in `src-tauri/.cargo/config.toml`
