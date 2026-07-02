@@ -2,6 +2,8 @@
 
 A desktop application that loads a local GGUF LLM via Candle and reviews code for bugs.
 
+![App Screenshot](screenshots/01-empty.png)
+
 ## What it does
 
 - Paste code into a text field

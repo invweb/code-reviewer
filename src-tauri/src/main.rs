@@ -138,29 +138,38 @@ fn analyze_code(code: String, state: State<AppState>) -> AnalysisResponse {
         Err(e) => return AnalysisResponse { ok: false, errors: None, error: Some(format!("Tokenization error: {e}")) },
     };
 
-    let max_new_tokens: usize = 1024;
+    let max_new_tokens: usize = 256;
+    let ctx_limit = 4096 - max_new_tokens;
+    if tokens.len() > ctx_limit {
+        return AnalysisResponse {
+            ok: false,
+            errors: None,
+            error: Some(format!(
+                "Code is too long for the model: {} tokens (limit: {}). Shorten the code and try again.",
+                tokens.len(), ctx_limit
+            )),
+        };
+    }
     let mut generated = tokens.clone();
+    let prompt_len = tokens.len();
 
     let mut gen_error: Option<candle_core::Error> = None;
-    for _ in 0..max_new_tokens {
-        let input_len = generated.len();
-        let start = input_len.saturating_sub(2048);
-        let input_tokens = &generated[start..];
-
-        let logits = match model.forward(input_tokens, 0) {
-            Ok(l) => l,
-            Err(e) => { gen_error = Some(e); break; }
+    for step in 0..max_new_tokens {
+        let (input_tokens, start_pos) = if step == 0 {
+            (&tokens[..], 0usize)
+        } else {
+            let last = &generated[generated.len() - 1..];
+            (last, prompt_len + step - 1)
         };
-        let next_token_logits = match logits
-            .get(logits.dim(0).unwrap_or(0) - 1)
-            .and_then(|last| last.get(last.dim(0).unwrap_or(0) - 1))
-        {
+
+        let logits = match model.forward(input_tokens, start_pos) {
             Ok(l) => l,
             Err(e) => { gen_error = Some(e); break; }
         };
 
-        let next_token = match next_token_logits
+        let next_token = match logits
             .argmax(candle_core::D::Minus1)
+            .and_then(|t| t.squeeze(0))
             .and_then(|t| t.to_scalar::<u32>())
         {
             Ok(t) => t,

@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -22,13 +22,12 @@
     .error-card .fix-label { font-size: 11px; color: #888; margin-bottom: 4px; }
     .no-errors { color: #4ecca3; font-size: 15px; padding: 16px; }
     .model-error { color: #e94560; font-size: 14px; padding: 16px; background: #16213e; border-radius: 8px; border: 1px solid #e9456033; }
-    pre { background: #0d1b2a; padding: 12px; border-radius: 6px; overflow-x: auto; font-size: 12px; margin-top: 8px; color: #aaa; }
   </style>
 </head>
 <body>
   <h1>Code Reviewer</h1>
-  <textarea id="code" placeholder="Вставьте код для ревью..."></textarea>
-  <button id="analyzeBtn" onclick="analyze()">Найти ошибки</button>
+  <textarea id="code" placeholder="Paste code to review..."></textarea>
+  <button id="analyzeBtn" onclick="analyze()">Find Errors</button>
   <div id="status"></div>
   <div id="results"></div>
 
@@ -42,12 +41,12 @@
       const btn = document.getElementById('analyzeBtn');
 
       if (!code) {
-        status.textContent = 'Введите код для анализа.';
+        status.textContent = 'Please enter some code to analyze.';
         return;
       }
 
       btn.disabled = true;
-      status.textContent = 'Анализ выполняется...';
+      status.textContent = 'Analyzing...';
       results.innerHTML = '';
 
       try {
@@ -56,18 +55,18 @@
         if (response.ok) {
           const errors = response.errors;
           if (errors.length === 0) {
-            results.innerHTML = '<div class="no-errors">Ошибок не найдено. Код выглядит хорошо!</div>';
+            results.innerHTML = '<div class="no-errors">No errors found. Code looks good!</div>';
             status.textContent = '';
           } else {
-            status.textContent = `Найдено ошибок: ${errors.length}`;
+            status.textContent = `Found ${errors.length} error(s):`;
             results.innerHTML = errors.map(e => `
               <div class="error-card">
                 <div>
-                  <span class="line">Строка ${e.line}</span>
+                  <span class="line">Line ${e.line}</span>
                   <span class="type">${escapeHtml(e.type)}</span>
                 </div>
                 <div class="desc">${escapeHtml(e.description)}</div>
-                <div class="fix-label">Исправление:</div>
+                <div class="fix-label">Suggested fix:</div>
                 <div class="fix">${escapeHtml(e.fix)}</div>
               </div>
             `).join('');
@@ -78,7 +77,7 @@
         }
       } catch (err) {
         status.textContent = '';
-        results.innerHTML = `<div class="model-error">Ошибка: ${escapeHtml(String(err))}</div>`;
+        results.innerHTML = `<div class="model-error">Error: ${escapeHtml(String(err))}</div>`;
       } finally {
         btn.disabled = false;
       }
